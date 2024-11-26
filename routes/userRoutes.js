@@ -3,9 +3,10 @@ const { getUsers, createUser, deleteUser, updateUser } = require('../controllers
 const authenticateToken = require('../middleware/authMiddleware');
 const checkPermission = require('../middleware/checkPermissions');
 const isAdmin=require('../middleware/isAdminMiddleware')
+const { validateUser, handleValidationErrors } = require('../validations/userValidation');
 const router = express.Router();
 router.get('/', authenticateToken, checkPermission('view_user'), getUsers);
-router.post('/', authenticateToken,isAdmin,checkPermission('create_user'), createUser);
+router.post('/', authenticateToken,isAdmin,checkPermission('create_user'),validateUser,handleValidationErrors,createUser);
 router.put('/:id',authenticateToken,checkPermission('update_user'),updateUser)
 router.delete('/:id', authenticateToken, checkPermission('delete_user'), deleteUser);
 
