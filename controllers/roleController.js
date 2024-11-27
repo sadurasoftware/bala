@@ -13,10 +13,8 @@ const createRole = async (req, res) => {
         if (permissionDocs.length !== permissions.length) {
             return res.status(400).json({ message: 'Invalid permissions provided' });
         }
-
         const role = new Role({ name, permissions });
         await role.save();
-
         logger.info(`Role created: ${name}`);
         res.status(201).json({ message: 'Role created successfully', role });
     } catch (err) {

@@ -5,14 +5,11 @@ const Role = require('../models/Role');
 const getUsers = async (req, res) => {
     try {
         const { page = 1, limit = 10 } = req.query;
-
         const users = await User.find()
             .populate('role', 'name permissions') 
             .skip((page - 1) * limit)
             .limit(parseInt(limit));
-
         const totalUsers = await User.countDocuments();
-
         res.status(200).json({
             message: 'Users fetched successfully',
             totalUsers,
@@ -23,7 +20,6 @@ const getUsers = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
-
 
 const createUser = async (req, res) => {
     try {
@@ -46,7 +42,6 @@ const createUser = async (req, res) => {
             role:roleDoc._id,
         });
         await user.save();
-
         logger.info(`User created: ${username}`);
         res.status(201).json({ message: 'User created successfully', user });
     } catch (err) {

@@ -7,10 +7,8 @@ const createPermission = async (req, res) => {
         if (existingPermission) {
             return res.status(400).json({ message: 'Permission already exists' });
         }
-
         const permission = new Permission({ name, description });
         await permission.save();
-
         logger.info(`Permission created: ${name}`);
         res.status(201).json({ message: 'Permission created successfully', permission });
     } catch (err) {

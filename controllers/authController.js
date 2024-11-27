@@ -18,14 +18,8 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ message: 'Invalid role specified' });
         }
         const hashedPassword = await hashPassword(password);
-        const user = new User({
-            username,
-            email,
-            password: hashedPassword,
-            role: roleDoc._id,
-        });
+        const user = new User({username,email,password: hashedPassword,role: roleDoc._id,});
         await user.save();
-
         logger.info(`User registered successfully: ${username}`);
         res.status(201).json({
             message: 'User registered successfully',
@@ -45,7 +39,10 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).populate({
+            path: 'role',
+            populate: { path: 'permissions' }, 
+        });
         if (!user) {
             logger.warn(`Login failed: User not found with email ${email}`);
             return res.status(404).json({ message: 'User not found' });
@@ -55,11 +52,8 @@ const loginUser = async (req, res) => {
             logger.warn(`Login failed: Invalid credentials for email ${email}`);
             return res.status(401).json({ message: 'Invalid credentials' });
         }
-        const token = generateToken({
-            id: user._id,
-            role: user.role,
-        });
-
+        const token = generateToken({id: user._id,role: user.role.name,});
+        const permissions = user.role.permissions.map((perm) => perm.name);
         logger.info(`User logged in successfully: ${email}`);
         res.status(200).json({
             message: 'Login successful',
@@ -68,7 +62,8 @@ const loginUser = async (req, res) => {
                 id: user._id,
                 username: user.username,
                 email: user.email,
-                role: user.role,
+                role: user.role.name, 
+                permissions, 
             },
         });
     } catch (err) {
@@ -76,6 +71,7 @@ const loginUser = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
 const logoutUser = (req, res) => {
     try {
         res.clearCookie('token', {
