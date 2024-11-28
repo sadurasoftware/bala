@@ -1,5 +1,6 @@
 const { hashPassword, verifyPassword } = require('../utils/hash');
-const { generateToken } = require('../utils/jwt');
+const { generateToken,verifyToken } = require('../utils/jwt');
+const { passwordResetEmail } = require('../utils/emailHelper');
 const User = require('../models/User');
 const logger = require('../utils/logger');
 const Role = require('../models/Role');
@@ -35,7 +36,6 @@ const registerUser = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
-
 const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -71,7 +71,42 @@ const loginUser = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+const forgetPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const token = generateToken({ id: user._id }, '15m');
+        const resetLink = `${process.env.FORGET_PASSWORD_URL}?token=${token}`;
 
+        await passwordResetEmail(user.email, resetLink, user.username);
+        res.status(200).json({ message: 'Password reset link sent to your email' });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};
+const resetPassword = async (req, res) => {
+    try {
+        const { token } = req.body;
+        const { newPassword } = req.body;
+
+        const decoded = verifyToken(token);
+        const user = await User.findById(decoded.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const hashedPassword = await hashPassword(newPassword);
+        user.password = hashedPassword;
+        await user.save();
+
+        res.status(200).json({ message: 'Password reset successfully' });
+    } catch (err) {
+        res.status(400).json({ message: 'Invalid or expired token', error: err.message });
+    }
+};
 const logoutUser = (req, res) => {
     try {
         res.clearCookie('token', {
@@ -88,4 +123,4 @@ const logoutUser = (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser,logoutUser };
+module.exports = { registerUser,forgetPassword,resetPassword,loginUser,logoutUser };
