@@ -76,14 +76,17 @@ const forgetPassword = async (req, res) => {
         const { email } = req.body;
         const user = await User.findOne({ email });
         if (!user) {
+            logger.warn(`Forgetpassword failed: Email not found ${email}`);
             return res.status(404).json({ message: 'User not found' });
         }
         const token = generateToken({ id: user._id }, '15m');
         const resetLink = `${process.env.FORGET_PASSWORD_URL}?token=${token}`;
 
         await passwordResetEmail(user.email, resetLink, user.username);
+        logger.info(`Password reset link sent successfully: ${email}`);
         res.status(200).json({ message: 'Password reset link sent to your email' });
     } catch (err) {
+        logger.error(`Email sending failed: ${err.message}`);
         res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
@@ -91,17 +94,16 @@ const resetPassword = async (req, res) => {
     try {
         const { token } = req.body;
         const { newPassword } = req.body;
-
         const decoded = verifyToken(token);
         const user = await User.findById(decoded.id);
         if (!user) {
+            logger.warn(`Resetpassword failed: Usernot found ${user}`);
             return res.status(404).json({ message: 'User not found' });
         }
-
         const hashedPassword = await hashPassword(newPassword);
         user.password = hashedPassword;
         await user.save();
-
+        logger.info(`Password reset successfully: ${user}`)
         res.status(200).json({ message: 'Password reset successfully' });
     } catch (err) {
         res.status(400).json({ message: 'Invalid or expired token', error: err.message });

@@ -5,14 +5,20 @@ const Role = require('../models/Role');
 const getUsers = async (req, res) => {
     try {
         const { page = 1, limit = 10 } = req.query;
+        const pageNumber = parseInt(page);
+        const limitNumber = parseInt(limit);
         const users = await User.find()
-            .populate('role', 'name permissions') 
-            .skip((page - 1) * limit)
-            .limit(parseInt(limit));
+            .skip((pageNumber - 1) * limitNumber)
+            .limit(limitNumber)
+            .select('-password') 
+            .populate('role', 'name');
         const totalUsers = await User.countDocuments();
+        const totalPages = Math.ceil(totalUsers / limitNumber);
         res.status(200).json({
             message: 'Users fetched successfully',
             totalUsers,
+            totalPages,
+            currentPage: pageNumber,
             users,
         });
     } catch (err) {
@@ -20,7 +26,22 @@ const getUsers = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
-
+const getUserById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id).populate('role', 'name permissions');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.status(200).json({
+            message: 'User fetched successfully',
+            user,
+        });
+    } catch (err) {
+        logger.error(`Error fetching user by ID: ${err.message}`);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
 const createUser = async (req, res) => {
     try {
         const { username, email, password, role } = req.body;
@@ -49,6 +70,8 @@ const createUser = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+
 const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
@@ -93,6 +116,38 @@ const deleteUser = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+const searchUser = async (req, res) => {
+    try {
+        const { role, searchQuery } = req.query;
+        if (!role && !searchQuery) {
+            return res.status(400).json({ message: 'Please provide a search parameter: role or searchQuery' });
+        }
+        let query = {};
+        if (role) {
+            const roleDoc = await Role.findOne({ name: role });
+            if (!roleDoc) {
+                return res.status(404).json({ message: 'Role not found' });
+            }
+            query.role = roleDoc._id;
+        }
+        if (searchQuery) {
+            const regex = new RegExp(searchQuery, 'i');
+            query.$or = [{ username: regex }, { email: regex }];
+        }
+
+        const user = await User.find(query).populate('role', 'name permissions');
+        if (user.length === 0) {
+            return res.status(404).json({ message: 'No users found' });
+        }
+        res.status(200).json({
+            message: 'Users fetched successfully',
+            users: user,
+        });
+    } catch (err) {
+        logger.error(`Error searching user: ${err.message}`);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
 
 
-module.exports = { getUsers, createUser,updateUser,deleteUser };
+module.exports = { getUsers,getUserById,createUser,updateUser,deleteUser,searchUser };

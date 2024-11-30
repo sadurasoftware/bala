@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-
-
 const UserSchema = new mongoose.Schema({
     username: {
         type: String,
@@ -19,6 +17,4 @@ const UserSchema = new mongoose.Schema({
     },
     role: { type: mongoose.Schema.Types.ObjectId, ref: 'Role', required: true },
 });
-
-
 module.exports = mongoose.model('User', UserSchema);
