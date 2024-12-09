@@ -5,7 +5,7 @@ const checkPermission = require('../middleware/checkPermissions');
 const isAdmin=require('../middleware/isAdminMiddleware')
 const {validate,registerValidation}=require('../validations/validator')
 const router = express.Router();
-router.get('/', authenticateToken,isAdmin,checkPermission('view_alluser'), getUsers);
+router.get('/', authenticateToken,checkPermission('view_alluser'), getUsers);
 router.get('/:id',authenticateToken,checkPermission('view_user'),getUserById)
 router.post('/', authenticateToken,isAdmin,checkPermission('create_user'),validate(registerValidation),createUser);
 router.put('/:id',authenticateToken,checkPermission('update_user'),updateUser)

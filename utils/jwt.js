@@ -3,7 +3,7 @@ require('dotenv').config();
 const secretKey = process.env.JWT_SECRET; 
 const blacklist = new Set(); 
 
-const generateToken = (payload, expiresIn = '5m') => {
+const generateToken = (payload, expiresIn = '30m') => {
     return jwt.sign(payload, secretKey, { expiresIn });
 };
 const verifyToken = (token) => {

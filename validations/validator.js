@@ -21,7 +21,7 @@ const registerValidation = [
     .isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
   body('role')
     .notEmpty().withMessage('Role is required')
-    .isIn(['admin', 'user', 'viewer']).withMessage('Role must be either admin, user, or viewer'),
+    .isIn(['admin', 'user', 'viewer','superadmin']).withMessage('Role must be either admin, user, or viewer'),
 ];
 const loginValidation = [
     body('email')
